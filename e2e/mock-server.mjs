@@ -101,7 +101,7 @@ function apiResponse(action, params) {
       if (params.get('vod_id') === '102') {
         return { info: { name: 'Dreamgirls', plot: '', cover: `${HOST}/logo/102.png` } };
       }
-      return { info: { name: 'VOD', plot: 'Sinopse detalhada do filme.', rating: '8', genre: 'Ação',
+      return { info: { name: 'VOD', plot: `Sinopse detalhada do filme. (vod_id ${params.get('vod_id')})`, rating: '8', genre: 'Ação',
         release_date: '2024', duration: '01:58:00', cover: `${HOST}/logo/101.png` } };
     case 'get_short_epg':
       return { epg_listings: [{ start: '1700000000', end: '1700003600', title: 'Programa 1', now_playing: 1 }] };

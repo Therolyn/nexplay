@@ -143,9 +143,9 @@ export async function itemsXtream(
 ): Promise<{ items: Item[]; total: number }> {
   let items: Item[];
   if (type === 'live') {
-    const root = (await fetchJson(xtreamBase(server, username, password))) as Record<string, unknown>;
-    const liveRaw = (root.live_streams || []) as Record<string, string>[];
-    const liveCats = (root.live_categories || []) as Record<string, string>[];
+    const root = (await fetchJson(xtreamBase(server, username, password)).catch(() => ({}))) as Record<string, unknown>;
+    const liveRaw = (root.live_streams || (await rawList(server, username, password, 'get_live_streams'))) as Record<string, string>[];
+    const liveCats = (root.live_categories || (await rawList(server, username, password, 'get_live_categories'))) as Record<string, string>[];
     const catNames = new Map(liveCats.map((c) => [String(c.category_id), c.category_name || 'Outros']));
     items = liveRaw.map((s) => {
       const sid = String(s.stream_id ?? '');

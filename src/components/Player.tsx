@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/store/useAppStore';
 import Hls from 'hls.js';
 
 export function Player() {
   const { player, closePlayer } = useApp();
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [failedFor, setFailedFor] = useState<string | null>(null);
   const triedRef = useRef(false);
@@ -51,30 +53,59 @@ export function Player() {
     };
   }, [player, failed, src, isHls, direct]);
 
-  if (!player) return null;
+  const goBack = () => {
+    closePlayer();
+    if (window.history.length > 1) router.back();
+    else router.push('/');
+  };
+
+  if (!player) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-black px-4 text-center">
+        <p className="text-sm text-zinc-400">Nada para reproduzir.</p>
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          className="min-h-10 rounded-full bg-violet-600 px-6 text-sm font-semibold text-white transition hover:bg-violet-500"
+        >
+          Voltar para a página inicial
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-black">
-      <div className="flex items-center justify-between px-4 py-3">
-        <p className="truncate pr-4 text-sm font-semibold text-zinc-200" title={player.title}>
+    <div className="flex min-h-dvh flex-col bg-black">
+      <div className="safe-top flex items-center justify-between gap-2 px-4 py-3">
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label="Voltar"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-lg text-zinc-200 transition hover:bg-zinc-700"
+        >
+          ←
+        </button>
+        <p className="min-w-0 flex-1 truncate px-2 text-center text-sm font-semibold text-zinc-200" title={player.title}>
           {player.title}
         </p>
         <button
           type="button"
-          onClick={closePlayer}
-          className="rounded-full bg-zinc-800 px-4 py-1.5 text-sm text-zinc-200 transition hover:bg-red-900/60 hover:text-red-300"
+          onClick={goBack}
+          className="min-h-10 shrink-0 rounded-full bg-zinc-800 px-4 text-sm text-zinc-200 transition hover:bg-red-900/60 hover:text-red-300"
         >
           ✕ Fechar
         </button>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-2 pb-4">
-        <video ref={videoRef} autoPlay controls playsInline className="max-h-full w-full bg-black" />
+      <div className="flex min-h-0 flex-1 items-center justify-center px-2 pb-4">
+        <video ref={videoRef} autoPlay controls playsInline className="h-full w-full bg-black" />
       </div>
 
-      <p className="pb-2 text-center text-xs text-zinc-600">
-        {failed ? 'Direto bloqueado — reproduzindo via proxy.' : isHls ? 'Reproduzindo via HLS' : 'Reproduzindo direto'}
-      </p>
+      <div className="safe-bottom">
+        <p className="pb-2 text-center text-xs text-zinc-600">
+          {failed ? 'Direto bloqueado — reproduzindo via proxy.' : isHls ? 'Reproduzindo via HLS' : 'Reproduzindo direto'}
+        </p>
+      </div>
     </div>
   );
 }

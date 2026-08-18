@@ -7,17 +7,17 @@ const CACHE_TTL = 10 * 60 * 1000;
 
 const store = new Map<string, { at: number; value: unknown }>();
 
-export function cached<T>(key: string, ttlMs = CACHE_TTL, fn: () => T | Promise<T>): T | Promise<T> {
+export function cached<T>(key: string, ttlMs = CACHE_TTL, fn: () => T | Promise<T>, opts?: { cacheEmpty?: boolean }): T | Promise<T> {
   const hit = store.get(key);
   if (hit && Date.now() - hit.at < ttlMs) return hit.value as T;
   const value = fn();
   if (value instanceof Promise) {
     return value.then((v) => {
-      set(key, v);
+      if (opts?.cacheEmpty !== false || v) set(key, v);
       return v;
     });
   }
-  set(key, value);
+  if (opts?.cacheEmpty !== false || value) set(key, value);
   return value;
 }
 

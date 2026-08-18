@@ -23,6 +23,15 @@ node e2e/api-check.mjs
 # 2) UI (Playwright, 27 checks)
 node e2e/ui-check.mjs
 
+# 2b) UI mobile (Playwright, viewport 375px, 16 checks)
+node e2e/mobile-check.mjs
+
+# 2c) Persistência de credenciais (checkbox salvar, auto-conectar, logout)
+node e2e/persist-check.mjs
+
+# 2d) Screenshots de referência
+node e2e/screenshots.mjs
+
 # 3) Provedor real (requer env)
 $env:XTREAM_SERVER="http://seuprovedor"
 $env:XTREAM_USER="usuario"

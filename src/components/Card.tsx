@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Item } from '@/lib/types';
 import { useApp } from '@/store/useAppStore';
 
@@ -16,16 +17,22 @@ function initials(name: string): string {
 
 export function Card({ item }: { item: Item }) {
   const { openItem, toggleFavorite, favorites } = useApp();
+  const router = useRouter();
   const [imgError, setImgError] = useState(false);
   const fav = favorites.some((f) => f.id === item.id);
   const rounded = item.type === 'live' ? 'rounded-full' : 'rounded-xl';
+
+  const open = () => {
+    openItem(item);
+    if (item.type === 'live') router.push('/player');
+  };
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => openItem(item)}
-      onKeyDown={(e) => e.key === 'Enter' && openItem(item)}
+      onClick={open}
+      onKeyDown={(e) => e.key === 'Enter' && open()}
       className="group cursor-pointer select-none"
     >
       <div className={`relative aspect-[2/3] w-full overflow-hidden bg-zinc-800/70 ${rounded} ring-1 ring-white/5 transition group-hover:ring-violet-500/60`}>
@@ -50,7 +57,7 @@ export function Card({ item }: { item: Item }) {
             e.stopPropagation();
             toggleFavorite(item);
           }}
-          className={`absolute right-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-xs opacity-0 transition group-hover:opacity-100 ${
+          className={`absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full text-base transition sm:opacity-0 sm:group-hover:opacity-100 ${
             fav ? 'bg-violet-600 text-white' : 'bg-black/60 text-zinc-300 hover:text-white'
           }`}
           aria-label={fav ? 'Remover favorito' : 'Adicionar favorito'}

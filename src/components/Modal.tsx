@@ -23,7 +23,7 @@ export function ModalShell({ onClose, children }: ModalShellProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-zinc-900 shadow-2xl ring-1 ring-white/10 sm:rounded-2xl"
+        className="safe-bottom max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-zinc-900 shadow-2xl ring-1 ring-white/10 sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

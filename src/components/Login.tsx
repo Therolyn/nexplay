@@ -1,23 +1,49 @@
 'use client';
 
-import { useState } from 'react';
-import { useApp, type ConnMode } from '@/store/useAppStore';
+import { useEffect, useRef, useState } from 'react';
+import { clearSavedCreds, loadSavedCreds, useApp, type ConnMode } from '@/store/useAppStore';
 
 export function Login() {
   const { connect, connecting, error } = useApp();
-  const [mode, setMode] = useState<ConnMode>('xtream');
-  const [server, setServer] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [url, setUrl] = useState('');
+  const [saved] = useState(() => loadSavedCreds());
+  const [mode, setMode] = useState<ConnMode>(saved?.mode === 'm3u' ? 'm3u' : 'xtream');
+  const [server, setServer] = useState(saved?.mode === 'xtream' ? saved.server || '' : '');
+  const [username, setUsername] = useState(saved?.mode === 'xtream' ? saved.username || '' : '');
+  const [password, setPassword] = useState(saved?.mode === 'xtream' ? saved.password || '' : '');
+  const [url, setUrl] = useState(saved?.mode === 'm3u' ? saved.url || '' : '');
+  const [hasSaved, setHasSaved] = useState(saved !== null);
+  const [saveData, setSaveData] = useState(true);
+  const autoReconnect = useRef(false);
+
+  useEffect(() => {
+    let skipped = false;
+    try {
+      skipped = sessionStorage.getItem('nexplay_logged_out') === '1';
+    } catch {
+      /* ignore */
+    }
+    if (saved && !skipped && !autoReconnect.current) {
+      autoReconnect.current = true;
+      connect(saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'xtream') {
-      connect({ mode, server, username, password });
-    } else {
-      connect({ mode, url });
-    }
+    const input = mode === 'xtream' ? { mode, server, username, password } : { mode, url };
+    void connect(input).then(() => {
+      if (!saveData) {
+        clearSavedCreds();
+        setHasSaved(false);
+      }
+    });
+  };
+
+  const clearSaved = () => {
+    clearSavedCreds();
+    setHasSaved(false);
+    setSaveData(false);
   };
 
   const inputCls =
@@ -67,6 +93,16 @@ export function Login() {
 
           {error && <p className="rounded-lg bg-red-950/60 border border-red-800 px-4 py-2 text-sm text-red-300">{error}</p>}
 
+          <label className="flex items-center gap-2.5 px-1 text-sm text-zinc-400 select-none">
+            <input
+              type="checkbox"
+              checked={saveData}
+              onChange={(e) => setSaveData(e.target.checked)}
+              className="h-4 w-4 accent-violet-600"
+            />
+            Salvar dados neste navegador (não digitar novamente)
+          </label>
+
           <button
             type="submit"
             disabled={connecting}
@@ -79,6 +115,15 @@ export function Login() {
         <p className="mt-6 text-center text-xs text-zinc-600">
           As credenciais ficam apenas no seu navegador (token local).
         </p>
+        {hasSaved && (
+          <button
+            type="button"
+            onClick={clearSaved}
+            className="mt-3 w-full rounded-lg py-2 text-center text-xs text-zinc-500 underline-offset-2 transition hover:text-red-300 hover:underline"
+          >
+            Limpar dados salvos deste navegador
+          </button>
+        )}
       </div>
     </div>
   );

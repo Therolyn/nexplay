@@ -49,7 +49,7 @@ async function main() {
   await page.getByText('Filme Terror 8').first().waitFor({ timeout: 15000 });
   ok('grid de filmes carregado (página completa)', true);
   ok('contagem na aba Filmes = 80', /Filmes \(80\)/.test(await filmeTab.innerText()));
-  await page.getByRole('button', { name: 'Todas (80)' }).click();
+  await page.getByRole('button', { name: /Categorias/ }).click();
   ok('categorias de filme listadas', (await page.getByText('Ação (8)').count()) > 0);
   await page.getByText('Ação (8)').first().click();
   await page.waitForTimeout(1500);
@@ -64,7 +64,7 @@ async function main() {
   await page.getByRole('button', { name: '☆ Favoritar' }).click();
   await page.getByRole('button', { name: '★ Favorito', exact: true }).waitFor({ timeout: 5000 });
   ok('favoritou', true);
-  await page.getByRole('button', { name: '✕' }).click();
+  await page.getByRole('button', { name: 'Fechar' }).click();
   await page.getByRole('button', { name: '★ Favoritos' }).click();
   await page.getByText('Filme Ação 1').first().waitFor({ timeout: 5000 });
   ok('favorito aparece no drawer', true);
@@ -82,12 +82,13 @@ async function main() {
   // --- Modal de filme sem sinopse (aviso honesto) ---
   console.log('\n[5] Filme sem sinopse');
   await page.getByRole('button', { name: /Filmes \(80\)/ }).click();
-  await page.getByRole('button', { name: 'Todas (80)' }).click();
+  await page.getByRole('button', { name: /Categorias/ }).click();
+  await page.getByRole('option', { name: 'Todas (80)' }).click();
   await page.getByText('Filme Terror 5').first().click();
   await page.getByText('Sinopse detalhada do filme.').last().waitFor({ timeout: 15000 });
   ok('modal de filme abre', true);
   ok('botão Assistir disponível', (await page.getByRole('button', { name: /▶ Assistir/ }).count()) === 1);
-  await page.getByRole('button', { name: '✕' }).click();
+  await page.getByRole('button', { name: 'Fechar' }).click();
 
   // --- Séries: modal com temporadas ---
   console.log('\n[6] Séries');
@@ -135,7 +136,8 @@ ok('temporada 1 listada', (await page.getByText('Temporada 1', { exact: true }).
   await page.getByText('Série Drama 1').first().click();
   await page.getByRole('heading', { name: 'Série Drama 1' }).waitFor({ timeout: 20000 });
   ok('série M3U resolvida via painel (series-search)', true);
-  ok('sinopse do painel na série M3U', (await page.getByText(/Plot da série Drama 1/).count()) > 0);
+  await page.getByText(/Plot da série Drama 1/).waitFor({ timeout: 20000 });
+  ok('sinopse do painel na série M3U', true);
 
   // --- Console limpo ---
   console.log('\n[9] Console');

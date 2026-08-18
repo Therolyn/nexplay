@@ -1,11 +1,13 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import type { Item, VodInfo } from '@/lib/types';
 import { useApp } from '@/store/useAppStore';
 import { InfoRow, ModalShell, plotFallback, useDetail, useFavorite, usePlayback } from './Modal';
 
 export function VodModal({ item }: { item: Item }) {
   const { conn, meta, closeModal } = useApp();
+  const router = useRouter();
   const play = usePlayback();
   const { fav, toggleFavorite } = useFavorite(item);
 
@@ -37,7 +39,8 @@ export function VodModal({ item }: { item: Item }) {
         <button
           type="button"
           onClick={closeModal}
-          className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-sm text-zinc-200 hover:bg-black/80"
+          aria-label="Fechar"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-sm text-zinc-200 hover:bg-black/80"
         >
           ✕
         </button>
@@ -75,6 +78,7 @@ export function VodModal({ item }: { item: Item }) {
           onClick={() => {
             closeModal();
             play(item.url, name);
+            router.push('/player');
           }}
           className="mt-5 w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white shadow-lg shadow-violet-900/40 transition hover:bg-violet-500 disabled:opacity-50"
         >

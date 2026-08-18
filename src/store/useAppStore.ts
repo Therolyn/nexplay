@@ -74,6 +74,38 @@ function saveFavorites(items: Item[]) {
   }
 }
 
+const CREDS_KEY = 'nexplay_creds_v1';
+
+export function loadSavedCreds(): ConnectInput | null {
+  try {
+    const raw = localStorage.getItem(CREDS_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as ConnectInput;
+    if (v?.mode !== 'xtream' && v?.mode !== 'm3u') return null;
+    if (v.mode === 'xtream' && (!v.server || !v.username)) return null;
+    if (v.mode === 'm3u' && !v.url) return null;
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+function saveCreds(input: ConnectInput) {
+  try {
+    localStorage.setItem(CREDS_KEY, JSON.stringify(input));
+  } catch {
+    /* storage full/blocked */
+  }
+}
+
+export function clearSavedCreds() {
+  try {
+    localStorage.removeItem(CREDS_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export const useApp = create<AppState>((set, get) => ({
   conn: null,
   meta: null,
@@ -107,6 +139,8 @@ export const useApp = create<AppState>((set, get) => ({
       const pages: Record<string, PageData> = {};
       const first = (data.first as Record<ItemType, Item[]>) || { live: [], vod: [], series: [] };
       pages[key('live', 'all')] = { items: first.live || [], total: counts.live, hasMore: (first.live || []).length < counts.live, page: 0 };
+      saveCreds(input);
+      sessionStorage.removeItem('nexplay_logged_out');
       set({ conn, meta, counts, cats, pages, type: 'live', cat: 'all', search: '', favorites: loadFavorites() });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e) });
@@ -174,8 +208,14 @@ export const useApp = create<AppState>((set, get) => ({
   play: (url, title) => set({ player: { url, title } }),
   closePlayer: () => set({ player: null }),
 
-  logout: () =>
-    set({ conn: null, meta: null, pages: {}, favorites: [], modal: null, player: null, error: null, search: '' }),
+  logout: () => {
+    try {
+      sessionStorage.setItem('nexplay_logged_out', '1');
+    } catch {
+      /* ignore */
+    }
+    set({ conn: null, meta: null, pages: {}, favorites: [], modal: null, player: null, error: null, search: '' });
+  },
 }));
 
 export { PAGE_SIZE };

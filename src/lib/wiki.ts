@@ -65,5 +65,5 @@ export function wikiIntro(title: string): Promise<string> {
     .replace(/\s+/g, ' ')
     .trim();
   if (!target) return Promise.resolve('');
-  return cached(`wiki|${target}`, 30 * 60 * 1000, () => wikiIntroInner(title, target)) as Promise<string>;
+  return cached(`wiki|${target}`, 30 * 60 * 1000, () => wikiIntroInner(title, target), { cacheEmpty: false }) as Promise<string>;
 }

@@ -1,6 +1,6 @@
 # NexPlay Next — Plano de Migração para Next.js + Vercel
 
-> Status: **implementado e validado** (2026-08-18) — build ✓, lint ✓, api-check 45/45 ✓, ui-check 27/27 ✓, real-check 27/27 ✓ (provedor sprph.fun). Próximo passo: deploy `npx vercel`.
+> Status: **implementado e validado** (2026-08-18) — build ✓, lint ✓, api-check 45/45 ✓, ui-check 27/27 ✓, mobile-check 16/16 ✓, persist-check 18/18 ✓, real-check 27/27 ✓ (provedor sprph.fun). Extras: menu de categorias em popup, persistência de credenciais (checkbox), player em página dedicada `/player`, fallback de sinopse via Wikipedia com cache anti-envenenamento, categorias de canais corrigidas (fallback `get_live_streams`). Próximo passo: deploy `npx vercel`.
 
 ## Objetivo
 Reescrever o NexPlay (hoje `webplayer-python`, servidor Python stdlib + JS vanilla) em **Next.js (App Router) + React + Tailwind**, deployável no **Vercel**, eliminando os problemas recorrentes:
