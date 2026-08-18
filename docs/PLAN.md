@@ -1,5 +1,7 @@
 # NexPlay Next — Plano de Migração para Next.js + Vercel
 
+> Status: **implementado e validado** (2026-08-18) — build ✓, lint ✓, api-check 45/45 ✓, ui-check 27/27 ✓, real-check 27/27 ✓ (provedor sprph.fun). Próximo passo: deploy `npx vercel`.
+
 ## Objetivo
 Reescrever o NexPlay (hoje `webplayer-python`, servidor Python stdlib + JS vanilla) em **Next.js (App Router) + React + Tailwind**, deployável no **Vercel**, eliminando os problemas recorrentes:
 - Portas/processos Python no Windows
@@ -72,12 +74,22 @@ nexplay-next/
 - Live longo contínuo: o free corta ~60s → **front usa URL direta do provedor primeiro** (muitos painéis enviam CORS `*`); se falhar, proxy
 - Opcional: `NEXPLAY_PROXY` apontando para um proxy externo (ex.: self-host) para streaming sem cortes
 
-## Testes (portar do webplayer-python)
+## Testes (portados do webplayer-python)
 
-- `e2e/mock-server.mjs` — mock Xtream (96 live/80 vod/30 séries) + `get.php` estilo painel
-- `e2e/audit.mjs` — 99 checks (login, home, live/vod/series, busca, favoritos, M3U, painel, responsivo, proxy Range, console limpo)
+- `e2e/mock-server.mjs` — mock Xtream (96 live/80 vod/30 séries) + `get.php` estilo painel + Range
+- `e2e/api-check.mjs` — 45 checks de API (connect Xtream/M3U, paginação, vod/série, wiki fallback, series-search, epg, img, proxy+Range)
+- `e2e/ui-check.mjs` — 27 checks de UI (login, abas, categorias, modal filme/série, favoritos, player, busca, M3U via painel, console limpo)
 - `e2e/real-check.mjs` — verificação com provedor real via `XTREAM_*` env
-- `npm run test:audit`, `npm run test:real`
+- Rodar: `npm run build && npm run start`, `node e2e/mock-server.mjs`, depois `node e2e/api-check.mjs` / `node e2e/ui-check.mjs` / `node e2e/real-check.mjs`
+
+## Notas de implementação (o que mudou em relação ao plano)
+
+- Credenciais: em vez de `server&username&password` em cada rota, o `POST /api/connect` devolve um token `base64url` stateless (`?conn=`) — sobrevive reciclagem de instância, sem registry.
+- `connectXtream` carrega counts/categorias/1ª página dos 3 tipos (listas cacheadas 10 min) — abas com contagens corretas de primeira.
+- Páginas vod/series NÃO são pré-hidratadas com 20 itens (causava salto de itens 20-79 no "Carregar mais") — carregam completas (80) do zero.
+- Mock real: `get_vod_streams` NÃO traz campo `plot` (só `get_vod_info`) — testes de sinopse validam via `/api/vod`, como o app.
+- Wikipedia: `wikiIntro` usa busca `title filme` e valida por título OU extract; cache 30 min (inclui misses).
+- Player: hls.js para `.m3u8`, fallback `/api/proxy` automático em erro fatal (uma única tentativa por item).
 
 ## Deploy
 
