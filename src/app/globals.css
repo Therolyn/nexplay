@@ -43,3 +43,13 @@ body {
 button {
   touch-action: manipulation;
 }
+
+:focus-visible {
+  outline: 3px solid #8b5cf6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}

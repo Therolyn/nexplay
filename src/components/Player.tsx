@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/store/useAppStore';
+import { isTV } from '@/lib/device';
 import Hls from 'hls.js';
 
 export function Player() {
@@ -32,7 +33,7 @@ export function Player() {
     };
 
     if (isHls && !native && Hls.isSupported()) {
-      hls = new Hls({ enableWorker: true });
+      hls = new Hls({ enableWorker: !isTV() });
       hls.loadSource(src);
       hls.attachMedia(video);
       hls.on(Hls.Events.ERROR, (_e, data) => {
@@ -53,11 +54,23 @@ export function Player() {
     };
   }, [player, failed, src, isHls, direct]);
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     closePlayer();
     if (window.history.length > 1) router.back();
     else router.push('/');
-  };
+  }, [closePlayer, router]);
+
+  useEffect(() => {
+    if (!player) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        e.preventDefault();
+        goBack();
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [player, goBack]);
 
   if (!player) {
     return (

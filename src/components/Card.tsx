@@ -57,7 +57,7 @@ export function Card({ item }: { item: Item }) {
             e.stopPropagation();
             toggleFavorite(item);
           }}
-          className={`absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full text-base transition sm:opacity-0 sm:group-hover:opacity-100 ${
+          className={`absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full text-base transition sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 ${
             fav ? 'bg-violet-600 text-white' : 'bg-black/60 text-zinc-300 hover:text-white'
           }`}
           aria-label={fav ? 'Remover favorito' : 'Adicionar favorito'}
@@ -65,7 +65,7 @@ export function Card({ item }: { item: Item }) {
           {fav ? '★' : '☆'}
         </button>
       </div>
-      <p className="mt-1.5 truncate text-center text-xs text-zinc-300 group-hover:text-white" title={item.name}>
+      <p className="mt-1.5 truncate text-center text-sm text-zinc-300 group-hover:text-white" title={item.name}>
         {item.name}
       </p>
     </div>

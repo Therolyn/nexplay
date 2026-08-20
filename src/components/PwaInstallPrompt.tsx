@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { isIOS, isTV } from '@/lib/device';
 
 const DISMISS_KEY = 'safiraplay_pwa_dismiss';
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -8,11 +9,6 @@ const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-function isIOS(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
 }
 
 function isStandalone(): boolean {
@@ -38,6 +34,7 @@ export function PwaInstallPrompt() {
   const [dismissed] = useState(isDismissed);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [ios] = useState(isIOS);
+  const [tv] = useState(isTV);
   const [closed, setClosed] = useState(false);
 
   useEffect(() => {
@@ -75,7 +72,7 @@ export function PwaInstallPrompt() {
     }
   };
 
-  if (installed || dismissed || closed || (!ios && !deferred)) return null;
+  if (installed || dismissed || closed || (!ios && !tv && !deferred)) return null;
 
   return (
     <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 p-3">
@@ -88,7 +85,9 @@ export function PwaInstallPrompt() {
             <p className="text-xs text-zinc-400">
               {ios
                 ? 'Toque no botão Compartilhar e depois em "Adicionar à Tela de Início".'
-                : 'Acesse mais rápido, como um app no seu dispositivo.'}
+                : tv && !deferred
+                  ? 'Seu navegador de TV não instala apps — adicione aos favoritos para acesso rápido.'
+                  : 'Acesse mais rápido, como um app no seu dispositivo.'}
             </p>
           </div>
           <button
@@ -101,7 +100,7 @@ export function PwaInstallPrompt() {
           </button>
         </div>
 
-        {!ios && (
+        {!ios && deferred && (
           <button
             type="button"
             onClick={install}
