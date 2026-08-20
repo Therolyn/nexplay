@@ -39,6 +39,9 @@ yarn-error.log*
 # e2e logs
 e2e/*.log
 
+# original assets kept locally (public/ has the used copies)
+/safiraplaysemfundo.png
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
