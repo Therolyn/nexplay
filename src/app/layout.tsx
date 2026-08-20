@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexPlay — IPTV Player",
+  title: "SafiraPlay - Player",
   description: "Player IPTV para provedores Xtream e listas M3U",
-  applicationName: "NexPlay",
+  applicationName: "SafiraPlay",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon-192.png",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "NexPlay",
+    title: "SafiraPlay",
     statusBarStyle: "black-translucent",
   },
 };

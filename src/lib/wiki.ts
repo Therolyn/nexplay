@@ -23,7 +23,7 @@ function wikiTitleOk(mname: string, ptitle: string): boolean {
 async function wikiGet(url: string): Promise<Record<string, unknown> | null> {
   for (let i = 0; i < 2; i++) {
     try {
-      const text = await fetchText(url, 10000, { 'User-Agent': 'NexPlay/1.0 (IPTV player; contact: local)' });
+      const text = await fetchText(url, 10000, { 'User-Agent': 'SafiraPlay/1.0 (IPTV player; contact: local)' });
       return JSON.parse(text) as Record<string, unknown>;
     } catch {
       if (i === 0) await new Promise((r) => setTimeout(r, 1000));

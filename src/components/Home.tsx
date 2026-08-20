@@ -54,7 +54,7 @@ export function Home() {
       <header className="sticky top-0 z-40 -mx-4 mb-4 border-b border-white/5 bg-zinc-950/95 px-4 pb-2 pt-3">
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="NexPlay" className="h-20 w-auto" />
+          <img src="/logo.png" alt="SafiraPlay" className="h-20 w-auto" />
 
           <div className="ml-auto flex items-center gap-2">
             <input

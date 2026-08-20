@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'NexPlay — IPTV Player',
-    short_name: 'NexPlay',
+    name: 'SafiraPlay - Player',
+    short_name: 'SafiraPlay',
     description: 'Player IPTV para provedores Xtream e listas M3U',
     lang: 'pt-BR',
     start_url: '/',

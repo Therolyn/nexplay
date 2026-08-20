@@ -54,7 +54,7 @@ export function Login() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="NexPlay" className="mx-auto h-40 w-auto" />
+          <img src="/logo.png" alt="SafiraPlay" className="mx-auto h-40 w-auto" />
           <p className="mt-2 text-sm text-zinc-500">Conecte seu provedor Xtream ou lista M3U</p>
         </div>
 
