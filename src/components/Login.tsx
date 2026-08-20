@@ -53,9 +53,8 @@ export function Login() {
     <div className="flex min-h-full flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-4xl font-black tracking-tight text-transparent">
-            NexPlay
-          </h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="NexPlay" className="mx-auto h-20 w-auto" />
           <p className="mt-2 text-sm text-zinc-500">Conecte seu provedor Xtream ou lista M3U</p>
         </div>
 

@@ -53,9 +53,8 @@ export function Home() {
     <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4">
       <header className="sticky top-0 z-40 -mx-4 mb-4 border-b border-white/5 bg-zinc-950/95 px-4 pb-2 pt-3">
         <div className="flex items-center gap-2">
-          <h1 className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-xl font-black tracking-tight text-transparent">
-            NexPlay
-          </h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="NexPlay" className="h-10 w-auto" />
 
           <div className="ml-auto flex items-center gap-2">
             <input
