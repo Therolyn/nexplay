@@ -186,11 +186,72 @@ export async function itemsXtream(
 
 /* ------------------------------ vod ------------------------------ */
 
-export async function vodInfo(server: string, username: string, password: string, vodId: string): Promise<{ info: VodInfo }> {
-  const base = xtreamBase(server, username, password);
-  const data = (await fetchJson(base + `&action=get_vod_info&vod_id=${encodeURIComponent(vodId)}`)) as Record<string, unknown>;
-  const info = (data.info || {}) as Record<string, unknown>;
-  const md = (data.movie_data || {}) as Record<string, unknown>;
+/** Best fuzzy match of `name` inside a provider list (by normalized title). */
+function matchByName<T extends Record<string, unknown>>(list: T[], name: string): T | null {
+  const q = normSeriesName(name);
+  if (!q) return null;
+  let best: T | null = null;
+  let bestScore = 0;
+  for (const row of list) {
+    const vn = normSeriesName(String(row.name || ''));
+    if (!vn) continue;
+    let score = 0;
+    if (vn === q) score = 10000;
+    else if (q.length >= 3 && (vn.startsWith(q) || q.startsWith(vn))) score = Math.max(vn.length, q.length);
+    else {
+      const ta = new Set(q.split(' '));
+      const tb = new Set(vn.split(' '));
+      let inter = 0;
+      for (const t of ta) if (tb.has(t)) inter++;
+      if (ta.size && inter / ta.size >= 0.5) score = inter * 100;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = row;
+    }
+  }
+  return bestScore > 0 ? best : null;
+}
+
+export async function vodInfo(
+  creds: { server: string; username: string; password: string } | null,
+  vodId: string,
+  name: string,
+): Promise<{ info: VodInfo }> {
+  let info: Record<string, unknown> = {};
+  let md: Record<string, unknown> = {};
+  let fromList: Record<string, unknown> | null = null;
+
+  const fetchDetail = async (id: string) => {
+    const base = xtreamBase(creds!.server, creds!.username, creds!.password);
+    const data = (await fetchJson(base + `&action=get_vod_info&vod_id=${encodeURIComponent(id)}`)) as Record<string, unknown>;
+    info = (data.info || {}) as Record<string, unknown>;
+    md = (data.movie_data || {}) as Record<string, unknown>;
+  };
+
+  if (creds) {
+    try {
+      if (vodId) {
+        await fetchDetail(vodId);
+      } else if (name) {
+        const list = await rawList(creds.server, creds.username, creds.password, 'get_vod_streams');
+        const match = matchByName(list, name);
+        if (match) {
+          fromList = match;
+          const id = String(match.stream_id ?? '');
+          if (id) {
+            try {
+              await fetchDetail(id);
+            } catch {
+              /* keep list data */
+            }
+          }
+        }
+      }
+    } catch {
+      /* keep empty, fall back to list/wiki */
+    }
+  }
 
   const s = (k: string, obj: Record<string, unknown> = info): string => {
     const v = obj[k];
@@ -198,41 +259,70 @@ export async function vodInfo(server: string, username: string, password: string
     return v === null || v === undefined ? '' : String(v).trim();
   };
 
+  const title = s('name') || name;
+
   let plot = s('plot') || s('description') || s('synopsis') || s('plot', md) || s('description', md) || s('synopsis', md);
-  if (plot.trim().length < 40) {
+  if (plot.trim().length < 40 && fromList) {
+    plot = plot.trim() || s('plot', fromList) || s('description', fromList) || s('synopsis', fromList);
+  }
+  if (plot.trim().length < 40 && title) {
     const { wikiIntro } = await import('./wiki');
-    plot = plot.trim() || (await wikiIntro(s('name')));
+    plot = plot.trim() || (await wikiIntro(title));
   }
 
-  let cover = s('cover') || s('movie_image') || s('backdrop_path');
-  if (cover && !/^https?:\/\//i.test(cover)) {
-    const origin = panelOrigin(server);
+  let cover = s('cover') || s('movie_image') || s('backdrop_path') || (fromList ? s('cover', fromList) || s('movie_image', fromList) : '');
+  if (cover && !/^https?:\/\//i.test(cover) && creds) {
+    const origin = panelOrigin(creds.server);
     cover = `${origin}${cover.startsWith('/') ? '' : '/'}${cover}`;
   }
 
   return {
     info: {
-      name: s('name'),
+      name: title,
       cover,
       plot: plot.slice(0, 600),
-      rating: s('rating'),
-      genre: s('genre') || s('genres'),
-      year: s('release_date') || s('year'),
+      rating: s('rating') || (fromList ? s('rating', fromList) : ''),
+      genre: s('genre') || s('genres') || (fromList ? s('genre', fromList) : ''),
+      year: s('release_date') || s('year') || (fromList ? s('year', fromList) : ''),
       duration: s('duration') || s('runtime'),
-      cast: s('cast') || s('actors'),
-      director: s('director'),
+      cast: s('cast') || s('actors') || (fromList ? s('cast', fromList) : ''),
+      director: s('director') || (fromList ? s('director', fromList) : ''),
     },
   };
 }
 
 /* ----------------------------- series ----------------------------- */
 
-export async function seriesInfo(server: string, username: string, password: string, seriesId: string): Promise<{ info: SeriesInfo; seasons: Season[] }> {
-  const base = xtreamBase(server, username, password);
-  const data = (await fetchJson(base + `&action=get_series_info&series_id=${encodeURIComponent(seriesId)}`)) as Record<string, unknown>;
-  const info = (data.info || {}) as Record<string, unknown>;
-  const md = (data.movie_data || {}) as Record<string, unknown>;
-  const origin = panelOrigin(server);
+export async function seriesInfo(
+  creds: { server: string; username: string; password: string } | null,
+  seriesId: string,
+  name: string,
+): Promise<{ info: SeriesInfo; seasons: Season[] }> {
+  let info: Record<string, unknown> = {};
+  let md: Record<string, unknown> = {};
+  let data: Record<string, unknown> = {};
+  let fromList: Record<string, unknown> | null = null;
+
+  if (creds) {
+    try {
+      let sid = seriesId;
+      if (!sid && name) {
+        const match = await seriesSearch(creds.server, creds.username, creds.password, name);
+        sid = match?.series_id || '';
+        if (match) fromList = match as unknown as Record<string, unknown>;
+      }
+      if (sid) {
+        const base = xtreamBase(creds.server, creds.username, creds.password);
+        data = (await fetchJson(base + `&action=get_series_info&series_id=${encodeURIComponent(sid)}`)) as Record<string, unknown>;
+        info = (data.info || {}) as Record<string, unknown>;
+        md = (data.movie_data || {}) as Record<string, unknown>;
+      }
+    } catch {
+      /* keep empty, fall back to list/wiki */
+    }
+  }
+
+  const origin = creds ? panelOrigin(creds.server) : '';
 
   const gv = (k: string, obj: Record<string, unknown> = info): string => {
     const v = obj[k];
@@ -270,7 +360,7 @@ export async function seriesInfo(server: string, username: string, password: str
       title: String(e.title || `Episódio ${e.episode_num || ''}`).trim(),
       plot: String(einfo.plot || einfo.description || einfo.synopsis || '').slice(0, 200),
       logo: String(einfo.movie_image || einfo.thumb || ''),
-      url: `${origin}/series/${username}/${password}/${eid}.${ext}`,
+      url: `${origin}/series/${creds?.username || ''}/${creds?.password || ''}/${eid}.${ext}`,
     });
   }
 
@@ -281,25 +371,28 @@ export async function seriesInfo(server: string, username: string, password: str
     .sort((a, b) => num(a.season) - num(b.season));
   for (const s of seasons) s.episodes.sort((a, b) => num(a.number) - num(b.number));
 
-  const name = gv('name');
+  const title = gv('name') || name;
   let plot = gv('plot') || gv('description') || gv('synopsis') || gv('plot', md) || gv('description', md);
-  if (plot.trim().length < 40) {
+  if (plot.trim().length < 40 && fromList) {
+    plot = plot.trim() || String(fromList.plot || fromList.description || '');
+  }
+  if (plot.trim().length < 40 && title) {
     const { wikiIntro } = await import('./wiki');
-    plot = plot.trim() || (await wikiIntro(name));
+    plot = plot.trim() || (await wikiIntro(title));
   }
 
-  let cover = gv('cover') || gv('backdrop_path') || gv('poster_path');
-  if (cover && !/^https?:\/\//i.test(cover)) cover = `${origin}${cover.startsWith('/') ? '' : '/'}${cover}`;
+  let cover = gv('cover') || gv('backdrop_path') || gv('poster_path') || (fromList ? String(fromList.cover || fromList.logo || '') : '');
+  if (cover && !/^https?:\/\//i.test(cover) && origin) cover = `${origin}${cover.startsWith('/') ? '' : '/'}${cover}`;
 
   return {
     info: {
-      name,
+      name: title,
       cover,
       plot: plot.slice(0, 600),
-      rating: gv('rating'),
-      genre: gv('genre') || gv('genres'),
-      year: gv('release_date') || gv('year'),
-      cast: gv('cast') || gv('actors'),
+      rating: gv('rating') || (fromList ? String(fromList.rating || '') : ''),
+      genre: gv('genre') || gv('genres') || (fromList ? String(fromList.genre || '') : ''),
+      year: gv('release_date') || gv('year') || (fromList ? String(fromList.year || '') : ''),
+      cast: gv('cast') || gv('actors') || (fromList ? String(fromList.cast || '') : ''),
     },
     seasons,
   };
@@ -313,21 +406,7 @@ function num(s: string): number {
 
 export async function seriesSearch(server: string, username: string, password: string, name: string) {
   const series = await rawList(server, username, password, 'get_series');
-  const q = normSeriesName(name);
-  if (!q) return null;
-  let best: Record<string, unknown> | null = null;
-  let bestScore = 0;
-  for (const s of series) {
-    const sn = normSeriesName(String(s.name || ''));
-    if (!sn) continue;
-    let score = 0;
-    if (sn === q) score = 10000;
-    else if (q.length >= 3 && (sn.startsWith(q) || q.startsWith(sn))) score = Math.max(sn.length, q.length);
-    if (score > bestScore) {
-      bestScore = score;
-      best = s;
-    }
-  }
+  const best = matchByName(series, name);
   if (!best) return null;
   return {
     series_id: String(best.series_id ?? ''),

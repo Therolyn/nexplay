@@ -10,9 +10,15 @@ export async function GET(req: NextRequest) {
     const sp = req.nextUrl.searchParams;
     const conn = decodeConn(sp.get('conn') || '');
     const vodId = sp.get('vod_id') || '';
-    if (!conn || !vodId) return NextResponse.json({ ok: false, error: 'Parâmetros inválidos' }, { status: 400 });
-    const creds = apiCreds(conn);
-    const r = await vodInfo(creds.server, creds.username, creds.password, vodId);
+    const name = (sp.get('name') || '').trim();
+    if (!conn || (!vodId && !name)) return NextResponse.json({ ok: false, error: 'Parâmetros inválidos' }, { status: 400 });
+    let creds = null;
+    try {
+      creds = apiCreds(conn);
+    } catch {
+      /* m3u sem painel: só fallback por nome (Wikipedia) */
+    }
+    const r = await vodInfo(creds, vodId, name);
     return NextResponse.json({ ok: true, ...r });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

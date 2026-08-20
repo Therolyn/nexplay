@@ -20,17 +20,8 @@ export function SeriesModal({ item }: { item: Item }) {
 
   const { data, loading, error } = useDetail<SeriesData | null>(async () => {
     if (!conn) return null;
-    const params = new URLSearchParams({ conn });
-    if (meta?.mode === 'xtream') {
-      params.set('series_id', item.id.slice(1));
-    } else {
-      const search = await fetch(`/api/series-search?conn=${encodeURIComponent(conn)}&name=${encodeURIComponent(item.name)}`);
-      const sj = (await search.json()) as { ok: boolean; match?: { series_id?: string } | null; error?: string };
-      if (!sj.ok) throw new Error(String(sj.error || 'Falha na busca da série'));
-      const sid = sj.match?.series_id;
-      if (!sid) throw new Error('Série não encontrada no painel do provedor. A lista M3U pode não ter as informações completas.');
-      params.set('series_id', sid);
-    }
+    const params = new URLSearchParams({ conn, name: item.name });
+    if (meta?.mode === 'xtream') params.set('series_id', item.id.slice(1));
     const res = await fetch(`/api/series?${params.toString()}`);
     const j = (await res.json()) as { ok: boolean; info?: SeriesInfo; seasons?: Season[]; error?: string };
     if (!j.ok) throw new Error(String(j.error || 'Falha ao carregar detalhes'));

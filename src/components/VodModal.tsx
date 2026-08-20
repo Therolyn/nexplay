@@ -12,11 +12,12 @@ export function VodModal({ item }: { item: Item }) {
   const { fav, toggleFavorite } = useFavorite(item);
 
   const vodId = meta?.mode === 'xtream' ? item.id.slice(1) : item.panelVodId || '';
-  const canFetch = Boolean(conn && vodId);
 
   const { data, loading, error } = useDetail<{ info: VodInfo } | null>(async () => {
-    if (!canFetch) return null;
-    const res = await fetch(`/api/vod?conn=${encodeURIComponent(conn!)}&vod_id=${encodeURIComponent(vodId)}`);
+    if (!conn) return null;
+    const params = new URLSearchParams({ conn, name: item.name });
+    if (vodId) params.set('vod_id', vodId);
+    const res = await fetch(`/api/vod?${params.toString()}`);
     const j = (await res.json()) as Record<string, unknown>;
     if (!j.ok) throw new Error(String(j.error || 'Falha ao carregar detalhes'));
     return j as unknown as { info: VodInfo };
